@@ -1,190 +1,167 @@
-//Belly Button Biodiversity Dashboard
-document.body.style.backgroundColor = 'white';
+// Create a constant variable where to place the URL
+const URL = 'https://2u-data-curriculum-team.s3.amazonaws.com/dataviz-classroom/v1.1/14-Interactive-Web-Visualizations/02-Homework/samples.json'
 
-// Place url in a constant variable
-const url = "https://2u-data-curriculum-team.s3.amazonaws.com/dataviz-classroom/v1.1/14-Interactive-Web-Visualizations/02-Homework/samples.json"
+// Fetch the json data and console log it
+d3.json(URL).then(function(data) {
+    console.log(data);
 
-// Fetch the JSON data and console log it
-d3.json(url).then(function(data) {
-  console.log(data);
-});
+}); 
 
-// Initialize the dashboard at start up 
+//Initializing the dashboard by creating the init function
 function init() {
 
-    // Use D3 to select the dropdown menu
-    let dropdownMenu = d3.select("#selDataset");
+        // Use D3 to select dropdown menu
+        let dropdownMenu = d3.select('#selDataset');
 
-    // Use D3 to get sample names and populate the drop-down selector
-    d3.json(url).then((data) => {
-        
-        // Set a variable for the sample names
+        //Using D3 getting access to sample data
+        d3.json(URL).then((data) => {
+
+        // Declaring a variable to store names
         let names = data.names;
+        console.log(names);
 
-        // Add  samples to dropdown menu
-        names.forEach((id) => {
-
-            // Log the value of id for each iteration of the loop
-            console.log(id);
-
-            dropdownMenu.append("option")
-            .text(id)
-            .property("value",id);
+        // Add samples to dropdown menu
+        names.forEach(function(id){
+            // Append each name as an option to the drop down menu
+            dropdownMenu.append('option').text(id).property('value', id);
         });
 
-        // Set the first sample from the list
-        let sample_one = names[0];
+        // Assign the first name to name variable
+        let name_one = names[0];
 
-        // Log the value of sample_one
-        console.log(sample_one);
+        // Log name_one
+        console.log(name_one);
 
-        // Build the initial plots
-        buildMetadata(sample_one);
-        buildBarChart(sample_one);
-        buildBubbleChart(sample_one);
-    });
+        // Build the plots: a demographic panel, a bar chart, a bubble chart, and a gauge chart
+        BarChart(name_one);
+        BubbleChart(name_one);
+        Metadata(name_one);
+        GaugeChart(name_one);
+
+    }); // Ending D3 access
 };
 
-// Function that populates metadata info
-function buildMetadata(sample) {
 
-    // Use D3 to retrieve all of the data
-    d3.json(url).then((data) => {
 
-        // Retrieve all metadata
-        let metadata = data.metadata;
 
-        // Filter based on the value of the sample
-        let value = metadata.filter(result => result.id == sample);
+// Build the bar chart
+// It is a horizontal bar chart with a dropdown menu to display the top 10 OTUs 
+function BarChart(sample){
+    //Use D3 to access the sample data for populating the bar chart
+    d3.json(URL).then((data) => {
+        let  sample_data = data.samples;
+        // Apply a filter based on name_one
+        let results = sample_data.filter(id => id.id == sample);
+        // Access the first result and store it in results filter
+        let first_result = results[0];
+        console.log(first_result);
+        // I want to display in the bar chart the first 10 results
+        let sample_values = first_result.sample_values.slice(0,10);
+        let otu_ids = first_result.otu_ids.slice(0,10);
+        let otu_labels = first_result.otu_labels.slice(0,10);
+        console.log(sample_values);
+        console.log(otu_ids);
+        console.log(otu_labels);
 
-        // Log the array of metadata objects after the have been filtered
-        console.log(value)
+        //Bar Chart's trace
+        let bar_chart_trace = {
+            x: sample_values.reverse(),
+            y: otu_ids.map(item => `OTU ${item}`).reverse(),
+            text: otu_labels.reverse(),
+            type: 'bar',
+            orientation: 'h',
+            
 
-        // Get the first index from the array
-        let valueData = value[0];
-
-        // Clear out metadata
-        d3.select("#sample-metadata").html("");
-
-        // Use Object.entries to add each key/value pair to the panel
-        Object.entries(valueData).forEach(([key,value]) => {
-
-            // Log the individual key/value pairs as they are being appended to the metadata panel
-            console.log(key,value);
-
-            d3.select("#sample-metadata").append("h5").text(`${key}: ${value}`);
-        });
-    });
-
-};
-
-// Function that builds the bar chart
-function buildBarChart(sample) {
-
-    // Use D3 to retrieve all of the data
-    d3.json(url).then((data) => {
-
-        // Retrieve all sample data
-        let sampleInfo = data.samples;
-
-        // Filter based on the value of the sample
-        let value = sampleInfo.filter(result => result.id == sample);
-
-        // Get the first index from the array
-        let valueData = value[0];
-
-        // Get the otu_ids, lables, and sample values
-        let otu_ids = valueData.otu_ids;
-        let otu_labels = valueData.otu_labels;
-        let sample_values = valueData.sample_values;
-
-        // Log the data to the console
-        console.log(otu_ids,otu_labels,sample_values);
-
-        // Set top ten items to display in descending order
-        let yticks = otu_ids.slice(0,10).map(id => `OTU ${id}`).reverse();
-        let xticks = sample_values.slice(0,10).reverse();
-        let labels = otu_labels.slice(0,10).reverse();
-        
-        // Set up the trace for the bar chart
-        let trace = {
-            x: xticks,
-            y: yticks,
-            text: labels,
-            type: "bar",
-            orientation: "h"
         };
-
-        // Setup the layout
-        let layout = {
-            title: "Top 10 OTUs Present"
-        };
-
-        // Call Plotly to plot the bar chart
-        Plotly.newPlot("bar", [trace], layout)
+        
+        let layout = {title: { 
+            text: '<b>Top 10 OTUs found</b>',
+        font: {size: 16, color: 'black'},
+        },
+        paper_bgcolor: "lightblue",
+    };
+        Plotly.newPlot('bar', [bar_chart_trace], layout);
     });
 };
 
-// Function that builds the bubble chart
-function buildBubbleChart(sample) {
-
-    // Use D3 to retrieve all of the data
-    d3.json(url).then((data) => {
-        
-        // Retrieve all sample data
-        let sampleInfo = data.samples;
-
-        // Filter based on the value of the sample
-        let value = sampleInfo.filter(result => result.id == sample);
-
-        // Get the first index from the array
-        let valueData = value[0];
-
-        // Get the otu_ids, lables, and sample values
-        let otu_ids = valueData.otu_ids;
-        let otu_labels = valueData.otu_labels;
-        let sample_values = valueData.sample_values;
-
-        // Log the data to the console
-        console.log(otu_ids,otu_labels,sample_values);
-        
-        // Set up the trace for bubble chart
-        let trace1 = {
+// Build the bubble chart
+function BubbleChart(sample){
+    //Using D3 to access the sample data and populate the bubble chart
+    d3.json(URL).then((data) => {
+        let sampleData = data.samples;
+        //Apply the filter
+        let results = sampleData.filter(result => result.id == sample);
+        // Access the first result and store it in results filter
+        let firstResult = results[0];
+        console.log(firstResult);
+         // I want to display the results in the bubble chart
+         let sample_values = firstResult.sample_values;
+         let otu_ids = firstResult.otu_ids;
+         let otu_labels = firstResult.otu_labels;
+         console.log(sample_values, otu_ids, otu_labels);
+         
+ 
+         // Bubble Chart's trace
+        let bubble_chart_trace = {
             x: otu_ids,
             y: sample_values,
             text: otu_labels,
-            mode: "markers",
+            mode: 'markers',
             marker: {
                 size: sample_values,
                 color: otu_ids,
-                colorscale: "Earth"
+                colorscale: 'Earth'
             }
         };
 
-        // Set up the layout
         let layout = {
-            title: "Bacteria Per Sample",
-            hovermode: "closest",
-            xaxis: {title: "OTU ID"},
+            title: { 
+                text: '<b>Bacteria Count for each Sample IDd</b>',
+            font: {size: 16, color: 'black'}
+            },
+            hovermode: 'closest',
+            paper_bgcolor: "lightblue",
+            xaxis:{title: 'OTU ID'},
+            yaxis:{title: 'Number of Bacteria'},
         };
+        //Call Plotly
+        Plotly.newPlot('bubble', [bubble_chart_trace], layout)
 
-        // Call Plotly to plot the bubble chart
-        Plotly.newPlot("bubble", [trace1], layout)
     });
 };
 
-// Function that updates dashboard when sample is changed
-function optionChanged(value) { 
+// Build the demographic panel
+function Metadata(sample){
 
-    // Log the new value
-    console.log(value); 
+    //Using D3 to access the sample data and populate the demographic
+    d3.json(URL).then((data) => {
 
-    // Call all functions 
-    buildMetadata(value);
-    buildBarChart(value);
-    buildBubbleChart(value);
-    buildGaugeChart(value);
-};
+        // Get the demographic information (i.e. metadata) using D3
+        let demographic_information = data.metadata;
+        //Filter
+        let results = demographic_information.filter(id => id.id == sample);
+        // Access the first result and store it in results filter
+        let first_result = results[0];
+        console.log(first_result);
+        //Clear out metadata
+        d3.select('#sample-metadata').html('');
+        //Use Object.entries to add each key and value to the panel
+        Object.entries(first_result).forEach(([key,value]) => {
+            console.log(key,value);
+            //Select the demographic info html
+            d3.select('#sample-metadata').append('h6').text(`${key},${value}`);
+        });
+    });
+}
 
-// Call the initialize function
+// Define the function when the dropdown detects a change
+function optionChanged(results){
+    console.log(results);
+    BarChart(results);
+    BubbleChart(results);
+    Metadata(results);
+    GaugeChart(results);
+}
+
+
 init();
